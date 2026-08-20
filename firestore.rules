@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Profiles collection
+    match /profiles/{profileId} {
+      // Anyone can read profiles
+      allow read: if true;
+      
+      // Anyone can create a profile (no auth required for simplicity)
+      // Add rate limiting via Firebase App Check in production
+      allow create: if request.resource.data.keys().hasAll([
+        'name', 'phone', 'gender', 'age', 'ugDegree',
+        'localities', 'roomTypes', 'food', 'alcohol', 'smoking'
+      ])
+      && request.resource.data.name is string
+      && request.resource.data.name.size() > 0
+      && request.resource.data.name.size() <= 100
+      && request.resource.data.phone is string
+      && request.resource.data.phone.size() >= 10
+      && request.resource.data.age is number
+      && request.resource.data.age >= 18
+      && request.resource.data.age <= 45
+      && request.resource.data.localities is list
+      && request.resource.data.localities.size() > 0
+      && request.resource.data.roomTypes is list
+      && request.resource.data.roomTypes.size() > 0;
+      
+      // No one can update or delete (admin-only via Firebase Console)
+      allow update, delete: if false;
+    }
+  }
+}
